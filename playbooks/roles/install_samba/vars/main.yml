@@ -1,0 +1,10 @@
+---
+samba_group: smbgrp
+samba_shared_folder: '/home/share'
+samba_workgroup: WORKGROUP
+samba_hostname: 'MyHomeStorage'
+samba_users:
+  - username: turtle
+    password: master
+  - username: ninja
+    password: master

@@ -1,0 +1,8 @@
+---
+# vars file for install_minidlna
+samba_group: smbgrp
+samba_shared_folder: '/home/share'
+samba_hostname: 'MyHomeStorage'
+    
+#setup centos version for rpmfusion package for miniDLNA server    
+centos_version: 7

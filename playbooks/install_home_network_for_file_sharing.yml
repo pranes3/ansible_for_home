@@ -1,0 +1,11 @@
+---
+#required libraries
+#ansible-galaxy collection install ansible.posix - for firewalld
+#run command: ansible-playbook playbooks/install_home_network_for_file_sharing.yml -K
+- name: Configure home network for file sharing on Centos 
+  hosts: all
+  become: yes
+
+  roles: 
+    - install_samba
+    - install_minidlna    

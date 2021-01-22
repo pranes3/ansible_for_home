@@ -1,0 +1,6 @@
+[centos__servers]
+centos1 ansible_host=192.168.0.59 ansible_user=turtle ansible_password=master 
+#centos2 ansible_host=192.168.0.62 ansible_user=turtle ansible_password=master 
+
+#ansible_ssh_private_key_file=id_rsa ansible_port=22
+

@@ -1,0 +1,99 @@
+---
+- name: install samba
+  yum:
+    name: nano, samba, samba-client, samba-common
+    state: latest
+- name: create samba group
+  ansible.builtin.group:
+    name:  "{{ samba_group }}" 
+    state: present
+- name: Add the user  to group  samba group 
+  user:
+    name: "{{ item.username }}"
+    groups: "{{ samba_group }}" 
+    append: yes
+    state: present
+  with_items: "{{ samba_users }}"
+
+- name: create shared public directory
+  ansible.builtin.file:
+    path: "{{ samba_shared_folder }}/public"
+    owner: nobody
+    group: nobody 
+    mode: '0775' #public folder for TV
+    state: directory
+    recurse: yes
+
+- name: create shared private directory
+  ansible.builtin.file:
+    path: "{{ samba_shared_folder }}/private"
+    owner: root
+    group: "{{ samba_group }}" 
+    mode: '0770'  #change it for hide user files from other users (0700)
+    state: directory
+    recurse: yes 
+
+#   - name: Make security manupulations
+#     community.general.sefcontext:
+#       target: '{{ samba_shared_folder }}(/.*)?'
+#       setype: samba_share_t
+#       state: present 
+
+- name: add private and public folders in samba cfg
+  blockinfile:
+    path: /etc/samba/smb.conf
+    block: |
+            [public]
+                  comment = my file share
+                  path = {{ samba_shared_folder }}/public
+                  public = yes
+                  writable = yes
+                  browsable = yes
+                  guest ok =yes
+                  ;     printable = no
+                  create mask = 0750
+                  ;     force user = nobody
+
+            [private]
+                  comment =  Secure File Server Share
+                  path = {{ samba_shared_folder }}/private
+                  valid users = @{{ samba_group }}
+                  guest ok = no
+                  writable = yes
+                  browsable = yes
+                  create mask = 0750
+  notify: restart samba
+
+- name: change area group name 
+  ansible.builtin.lineinfile:
+    path: /etc/samba/smb.conf
+    regexp: '.*workgroup'
+    line: workgroup = {{ samba_workgroup }}
+    insertafter: '^\[global\]'
+  notify: restart samba
+
+- name: create computer name
+  ansible.builtin.lineinfile:
+    path: /etc/samba/smb.conf
+    regexp: '.*netbios name'
+    line: netbios name = {{ samba_hostname }}
+    insertafter: '^\[global\]'
+  notify: restart samba
+
+- name: Configure Samba users.
+  shell: >
+    (pdbedit --user={{ item.username }} 2>&1 > /dev/null)
+    || (echo '{{ item.password }}'; echo '{{ item.password }}')
+    | smbpasswd -s -a {{ item.username }}
+  register: smbpasswd
+  changed_when: "'Added user' in smbpasswd.stdout"
+  with_items: "{{ samba_users }}"
+  loop_control:
+    label: "{{ item.username }}"
+
+- name: add firewall rule
+  ansible.posix.firewalld:
+    zone: public
+    service: samba
+    permanent: yes
+    state: enabled   

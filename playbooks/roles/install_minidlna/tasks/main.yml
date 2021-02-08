@@ -45,3 +45,8 @@
     permanent: yes
     state: enabled   
   notify: restart firewalld
+
+- name: Enable autorun after restart
+  ansible.builtin.systemd:
+    name: minidlna
+    enabled: yes
